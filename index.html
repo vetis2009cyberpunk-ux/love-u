@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>มีอะไรจะบอก... 💖</title>
+    <!-- แก้ไขลิงก์ฟอนต์ภาษาไทยให้โหลดติดสมบูรณ์ -->
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Mali', cursive, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #ffe6f2 0%, #ffb3d9 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* พื้นหลังหัวใจลอย */
+        .bg-hearts {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .heart-particle {
+            position: absolute;
+            bottom: -50px;
+            font-size: 24px;
+            animation: floatUp linear infinite;
+            opacity: 0.7;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-110vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* การ์ดตรงกลาง */
+        .card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            padding: 40px 30px;
+            border-radius: 30px;
+            box-shadow: 0 15px 35px rgba(255, 105, 180, 0.3);
+            text-align: center;
+            max-width: 420px;
+            width: 90%;
+            z-index: 10;
+            border: 3px solid #fff;
+            transition: transform 0.3s ease;
+        }
+
+        .cute-icon {
+            font-size: 75px;
+            margin-bottom: 15px;
+            display: inline-block;
+            animation: bounce 1.5s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+
+        h1 {
+            color: #ff3385;
+            font-size: 26px;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        p {
+            color: #ff66a3;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            min-height: 55px;
+        }
+
+        button {
+            padding: 12px 28px;
+            font-size: 18px;
+            font-weight: 700;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 51, 133, 0.2);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #yes-btn {
+            background: linear-gradient(45deg, #ff4d94, #ff1a75);
+            color: white;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #yes-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 20px rgba(255, 26, 117, 0.4);
+        }
+
+        #no-btn {
+            background: #f2f2f2;
+            color: #888;
+            z-index: 999; /* ให้อยู่เหนือการ์ดเสมอเวลาวิ่งหนี */
+            transition: left 0.15s ease-out, top 0.15s ease-out; /* ทำให้ขยับหนีแบบลื่นไหล */
+        }
+
+        /* หน้าจอเมื่อกดรัก */
+        #success-screen {
+            display: none;
+        }
+
+        .love-letter {
+            background: #fff0f5;
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px dashed #ff80b3;
+            margin-top: 20px;
+            color: #d63384;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-hearts" id="bg-hearts"></div>
+
+    <!-- หน้าแรก: ถามคำถาม -->
+    <div class="card" id="question-screen">
+        <div class="cute-icon">🐰💖</div>
+        <h1 id="question">รักเค้ามั้ยค้าบบ?</h1>
+        <p>ตอบดีๆ นะ ตอบไม่ดีจะฆ่าบี๋ 🥺</p>
+        
+        <div class="btn-group">
+            <button id="yes-btn" onclick="sayYes()">รักที่สุด! 💕</button>
+            <button id="no-btn">ไม่รัก 😝</button>
+        </div>
+    </div>
+
+    <!-- หน้าที่สอง: กดรักแล้ว -->
+    <div class="card" id="success-screen">
+        <div class="cute-icon">🥰🎉</div>
+        <h1>เย้! เค้าก็รักเธอเหมือนกัน!</h1>
+        <div class="love-letter" id="success-message">
+            งื้อออ ขิคุอาโนเนะของเค้าาาาา รักค้าบ 🌷<br>
+            💖✨
+        </div>
+    </div>
+
+    <script>
+        // สร้างหัวใจลอยพื้นหลัง
+        const bgHearts = document.getElementById('bg-hearts');
+        const heartEmojis = ['💖', '💕', '💗', '💓', '🌸', '✨'];
+
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.classList.add('heart-particle');
+            heart.innerText = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDuration = (Math.random() * 3 + 4) + 's';
+            heart.style.fontSize = (Math.random() * 15 + 15) + 'px';
+            bgHearts.appendChild(heart);
+
+            setTimeout(() => {
+                heart.remove();
+            }, 7000);
+        }
+        setInterval(createHeart, 400);
+
+        // ฟังก์ชันปุ่ม "ไม่รัก" วิ่งหนี (แก้บั๊กแล้ว)
+        const noBtn = document.getElementById('no-btn');
+        
+        function runAway(e) {
+            if (e) e.preventDefault(); // ป้องกันการคลิกติดบนมือถือ
+
+            // ย้ายปุ่มออกจาก .card มาอยู่ใน body เพื่อให้ตำแหน่ง fixed อ้างอิงกับทั้งหน้าจอ
+            if (noBtn.parentElement !== document.body) {
+                const rect = noBtn.getBoundingClientRect();
+                document.body.appendChild(noBtn);
+                noBtn.style.position = 'fixed';
+                noBtn.style.left = rect.left + 'px';
+                noBtn.style.top = rect.top + 'px';
+            }
+
+            // คำนวณขอบเขตหน้าจอไม่ให้ปุ่มหลุดขอบ
+            const padding = 20;
+            const maxX = window.innerWidth - noBtn.offsetWidth - padding;
+            const maxY = window.innerHeight - noBtn.offsetHeight - padding;
+
+            const randomX = Math.max(padding, Math.floor(Math.random() * maxX));
+            const randomY = Math.max(padding, Math.floor(Math.random() * maxY));
+
+            // หน่วงเวลาเสี้ยววินาทีเพื่อให้ transition ทำงานลื่นๆ
+            requestAnimationFrame(() => {
+                noBtn.style.left = randomX + 'px';
+                noBtn.style.top = randomY + 'px';
+            });
+        }
+
+        // ดักจับทั้งเมาส์ชี้ (คอม) แตะหน้าจอ (มือถือ) และคลิก
+        noBtn.addEventListener('mouseover', runAway);
+        noBtn.addEventListener('touchstart', runAway, { passive: false });
+        noBtn.addEventListener('click', runAway);
+
+        // ฟังก์ชันเมื่อกดปุ่ม "รัก"
+        function sayYes() {
+            document.getElementById('question-screen').style.display = 'none';
+            noBtn.style.display = 'none'; // ซ่อนปุ่มไม่รักที่หนีไปอยู่ข้างนอกด้วย
+            document.getElementById('success-screen').style.display = 'block';
+            
+            // ปล่อยหัวใจรัวๆ ฉลอง
+            for(let i = 0; i < 30; i++) {
+                setTimeout(createHeart, i * 80);
+            }
+        }
+    </script>
+</body>
+</html>
